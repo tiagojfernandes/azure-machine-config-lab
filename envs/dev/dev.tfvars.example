@@ -1,4 +1,11 @@
-# Development Environment Variable Values
+# Development Environment Variable Values - TEMPLATE
+# Copy this file to dev.tfvars and fill in your values
+# DO NOT commit dev.tfvars to source control
+
+#------------------------------------------------------------------------------
+# Azure Subscription
+#------------------------------------------------------------------------------
+subscription_id = "" # Your Azure subscription ID
 
 #------------------------------------------------------------------------------
 # General
@@ -42,10 +49,8 @@ admin_username           = "azureadmin"
 create_windows_public_ip = false
 create_linux_public_ip   = false
 
-# Credentials - provide via environment variable or secret management:
-# admin_password      = "..." # Required for Windows
-# admin_ssh_key       = "..." # Recommended for Linux
-# linux_admin_password = "..." # Alternative for Linux if not using SSH
+# Credentials - provide via command line or environment variable:
+# terraform apply -var="admin_password=YourPassword" -var="admin_ssh_key=ssh-rsa ..."
 
 #------------------------------------------------------------------------------
 # Monitoring

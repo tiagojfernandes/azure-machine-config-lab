@@ -1,6 +1,14 @@
 # Development Environment Variables
 
 #------------------------------------------------------------------------------
+# Azure Subscription
+#------------------------------------------------------------------------------
+variable "subscription_id" {
+  description = "Azure subscription ID where resources will be deployed"
+  type        = string
+}
+
+#------------------------------------------------------------------------------
 # General
 #------------------------------------------------------------------------------
 variable "location" {
