@@ -55,7 +55,7 @@ module "compute_linux" {
   vm_size                         = var.vm_size
   admin_username                  = var.admin_username
   admin_ssh_key                   = var.admin_ssh_key
-  admin_password                  = var.linux_admin_password
+  admin_password                  = var.admin_ssh_key != null ? null : var.admin_password  # Use Windows password if no SSH key
   disable_password_authentication = var.admin_ssh_key != null
   create_public_ip                = var.create_linux_public_ip
   tags                            = var.tags

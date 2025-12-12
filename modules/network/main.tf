@@ -26,8 +26,9 @@ resource "azurerm_network_security_group" "main" {
 }
 
 # NSG Rule - Allow RDP from allowed IPs (Windows)
+# Only created if allow_rdp=true AND source IPs are provided
 resource "azurerm_network_security_rule" "allow_rdp" {
-  count = var.allow_rdp ? 1 : 0
+  count = var.allow_rdp && length(var.allowed_source_ips) > 0 ? 1 : 0
 
   name                        = "Allow-RDP"
   priority                    = 100
@@ -43,8 +44,9 @@ resource "azurerm_network_security_rule" "allow_rdp" {
 }
 
 # NSG Rule - Allow SSH from allowed IPs (Linux)
+# Only created if allow_ssh=true AND source IPs are provided
 resource "azurerm_network_security_rule" "allow_ssh" {
-  count = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh && length(var.allowed_source_ips) > 0 ? 1 : 0
 
   name                        = "Allow-SSH"
   priority                    = 110
