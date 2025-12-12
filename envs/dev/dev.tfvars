@@ -26,10 +26,11 @@ subnets = {
 
 nsg_name = "nsg-mc-lab-dev"
 
-# NSG Rules - Set your allowed IPs for RDP/SSH access
-allow_rdp          = true
-allow_ssh          = true
-allowed_source_ips = [] # Add your public IP, e.g., ["203.0.113.50"]
+# NSG Rules - Disabled by default since JIT VM Access manages RDP/SSH rules dynamically
+# Set to true only if NOT using JIT access
+allow_rdp          = false
+allow_ssh          = false
+allowed_source_ips = [] # Only needed if allow_rdp/allow_ssh is true
 
 #------------------------------------------------------------------------------
 # Compute

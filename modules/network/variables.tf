@@ -32,15 +32,15 @@ variable "nsg_name" {
 }
 
 variable "allow_rdp" {
-  description = "Whether to allow RDP access from allowed IPs"
+  description = "Whether to create an RDP allow rule. Set to false if using JIT access."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "allow_ssh" {
-  description = "Whether to allow SSH access from allowed IPs"
+  description = "Whether to create an SSH allow rule. Set to false if using JIT access."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "allowed_source_ips" {
