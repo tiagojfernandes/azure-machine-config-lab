@@ -1,88 +1,71 @@
+variable "resource_group_id" {
+  description = "The ID of the resource group to assign custom policies to"
+  type        = string
+}
+
 variable "location" {
-  description = "Azure region for the configuration assignments"
+  description = "Azure region for the policy assignment identities"
   type        = string
 }
 
-variable "windows_vm_ids" {
-  description = "Map of Windows VM names to IDs for custom configuration"
-  type        = map(string)
-  default     = {}
+variable "custom_policy_assignments" {
+  description = <<-EOT
+    Map of custom Guest Configuration policy assignments.
+    Each entry should specify:
+    - policy_definition_id: The policy or initiative definition ID
+    - display_name: Human-readable name
+    - description: Description of what this policy does
+    - parameters: Optional parameters for the policy (as a map)
+    - needs_remediation: Whether this policy needs a role assignment for remediation (DeployIfNotExists)
+    - role_definition_name: Role to assign for remediation (default: Contributor)
+    - create_remediation: Whether to create a remediation task for existing resources
+    - non_compliance_message: Custom message for non-compliant resources
+    
+    Example assignments for future use:
+    - TLS hardening: Audit/enforce TLS 1.2+
+    - SSH hardening: Enforce key-based auth, disable root login
+    - Windows hardening: Password policies, audit policies
+  EOT
+  type = map(object({
+    policy_definition_id   = string
+    display_name           = string
+    description            = optional(string, "Custom Guest Configuration policy assignment")
+    parameters             = optional(map(any), null)
+    needs_remediation      = optional(bool, false)
+    role_definition_name   = optional(string, "Contributor")
+    create_remediation     = optional(bool, false)
+    non_compliance_message = optional(string, null)
+  }))
+  default = {}
 }
 
-variable "linux_vm_ids" {
-  description = "Map of Linux VM names to IDs for custom configuration"
-  type        = map(string)
-  default     = {}
-}
-
-variable "assignment_type" {
-  description = "Type of configuration assignment (Audit, ApplyAndMonitor, ApplyAndAutoCorrect)"
-  type        = string
-  default     = "Audit"
-}
-
-variable "configuration_version" {
-  description = "Version of the guest configuration"
-  type        = string
-  default     = "1.0.0"
-}
-
-variable "windows_configuration_name" {
-  description = "Name of the Windows guest configuration"
-  type        = string
-  default     = "WindowsCustomConfig"
-}
-
-variable "linux_configuration_name" {
-  description = "Name of the Linux guest configuration"
-  type        = string
-  default     = "LinuxCustomConfig"
-}
-
-variable "windows_configuration_parameters" {
-  description = "Parameters for Windows guest configuration"
-  type        = map(string)
-  default     = {}
-}
-
-variable "linux_configuration_parameters" {
-  description = "Parameters for Linux guest configuration"
-  type        = map(string)
-  default     = {}
-}
-
-variable "create_custom_policy" {
-  description = "Whether to create a custom policy definition"
-  type        = bool
-  default     = false
-}
-
-variable "custom_policy_name" {
-  description = "Name of the custom policy definition"
-  type        = string
-  default     = "custom-gc-policy"
-}
-
-variable "custom_policy_display_name" {
-  description = "Display name of the custom policy"
-  type        = string
-  default     = "Custom Guest Configuration Policy"
-}
-
-variable "custom_policy_description" {
-  description = "Description of the custom policy"
-  type        = string
-  default     = "Custom guest configuration policy for compliance"
-}
-
-variable "guest_configuration_name" {
-  description = "Name of the guest configuration for the policy"
-  type        = string
-  default     = "CustomGuestConfiguration"
-}
-
-variable "policy_effect" {
-  description = "Effect for the custom policy"
-  type        = string
-  default     = "AuditIfNotExists"
-}
+# Example variable structure for common hardening scenarios:
+#
+# custom_policy_assignments = {
+#   "tls-hardening" = {
+#     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/xxx"
+#     display_name         = "TLS 1.2+ Enforcement"
+#     description          = "Ensure TLS 1.2 or higher is used for secure connections"
+#     needs_remediation    = true
+#     create_remediation   = true
+#   }
+#   
+#   "ssh-key-only" = {
+#     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/yyy"
+#     display_name         = "SSH Key-Based Authentication Only"
+#     description          = "Linux VMs should use SSH key authentication, not passwords"
+#     needs_remediation    = false
+#   }
+#   
+#   "windows-password-policy" = {
+#     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/zzz"
+#     display_name         = "Windows Password Policy"
+#     description          = "Enforce strong password requirements on Windows VMs"
+#     parameters = {
+#       MinimumPasswordLength = { value = 14 }
+#       PasswordComplexity    = { value = "Enabled" }
+#     }
+#     needs_remediation    = true
+#     create_remediation   = true
+#   }
+# }

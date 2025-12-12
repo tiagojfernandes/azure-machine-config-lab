@@ -1,14 +1,14 @@
-output "windows_configuration_assignment_ids" {
-  description = "Map of Windows VM names to their configuration assignment IDs"
-  value       = { for k, v in azurerm_policy_virtual_machine_configuration_assignment.windows_custom : k => v.id }
+output "policy_assignment_ids" {
+  description = "Map of custom policy assignment names to their IDs"
+  value       = { for k, v in azurerm_resource_group_policy_assignment.custom_gc : k => v.id }
 }
 
-output "linux_configuration_assignment_ids" {
-  description = "Map of Linux VM names to their configuration assignment IDs"
-  value       = { for k, v in azurerm_policy_virtual_machine_configuration_assignment.linux_custom : k => v.id }
+output "policy_assignment_identity_principal_ids" {
+  description = "Map of custom policy assignment names to their identity principal IDs"
+  value       = { for k, v in azurerm_resource_group_policy_assignment.custom_gc : k => v.identity[0].principal_id }
 }
 
-output "custom_policy_id" {
-  description = "The ID of the custom policy definition"
-  value       = var.create_custom_policy ? azurerm_policy_definition.custom_gc_policy[0].id : null
+output "remediation_ids" {
+  description = "Map of remediation task names to their IDs"
+  value       = { for k, v in azurerm_resource_group_policy_remediation.custom_gc : k => v.id }
 }

@@ -29,6 +29,13 @@ variable "admin_username" {
   type        = string
 }
 
+variable "admin_password" {
+  description = "Admin password for the VM (used if SSH key not provided)"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
 variable "admin_ssh_key" {
   description = "SSH public key for authentication"
   type        = string
@@ -36,9 +43,15 @@ variable "admin_ssh_key" {
 }
 
 variable "disable_password_authentication" {
-  description = "Disable password authentication"
+  description = "Disable password authentication (set to false if using password)"
   type        = bool
   default     = true
+}
+
+variable "create_public_ip" {
+  description = "Whether to create a public IP for the VM"
+  type        = bool
+  default     = false
 }
 
 variable "os_disk_type" {

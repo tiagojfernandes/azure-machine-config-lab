@@ -1,4 +1,5 @@
 # Network Module
+# Creates VNet, subnet(s), NSG with rules, and NSG-to-subnet association
 
 resource "azurerm_virtual_network" "main" {
   name                = var.vnet_name
@@ -22,4 +23,46 @@ resource "azurerm_network_security_group" "main" {
   location            = var.location
   resource_group_name = var.resource_group_name
   tags                = var.tags
+}
+
+# NSG Rule - Allow RDP from allowed IPs (Windows)
+resource "azurerm_network_security_rule" "allow_rdp" {
+  count = var.allow_rdp ? 1 : 0
+
+  name                        = "Allow-RDP"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "3389"
+  source_address_prefixes     = var.allowed_source_ips
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.main.name
+}
+
+# NSG Rule - Allow SSH from allowed IPs (Linux)
+resource "azurerm_network_security_rule" "allow_ssh" {
+  count = var.allow_ssh ? 1 : 0
+
+  name                        = "Allow-SSH"
+  priority                    = 110
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "22"
+  source_address_prefixes     = var.allowed_source_ips
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.main.name
+}
+
+# NSG Association to Subnet(s)
+resource "azurerm_subnet_network_security_group_association" "main" {
+  for_each = var.subnets
+
+  subnet_id                 = azurerm_subnet.main[each.key].id
+  network_security_group_id = azurerm_network_security_group.main.id
 }

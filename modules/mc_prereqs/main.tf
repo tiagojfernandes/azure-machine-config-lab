@@ -1,42 +1,45 @@
 # Machine Configuration Prerequisites Module
+# Assigns the built-in "Deploy prerequisites to enable Guest Configuration policies on virtual machines"
+# initiative at Resource Group scope.
+#
+# This initiative deploys:
+# - Machine Configuration (Guest Configuration) extension/agent
+# - System-assigned managed identity on VMs
+# - Other prerequisites for Guest Configuration policies to work
 
-# User-assigned managed identity for Machine Configuration
-resource "azurerm_user_assigned_identity" "mc_identity" {
-  name                = var.managed_identity_name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  tags                = var.tags
-}
+# Policy Assignment for MC Prerequisites Initiative
+resource "azurerm_resource_group_policy_assignment" "mc_prereqs" {
+  name                 = var.assignment_name
+  resource_group_id    = var.resource_group_id
+  policy_definition_id = var.prereqs_initiative_id
+  display_name         = var.assignment_display_name
+  description          = "Deploys prerequisites to enable Guest Configuration policies on virtual machines in this resource group"
 
-# Storage account for Machine Configuration packages
-resource "azurerm_storage_account" "mc_storage" {
-  count = var.create_storage_account ? 1 : 0
+  identity {
+    type = "SystemAssigned"
+  }
 
-  name                     = var.storage_account_name
-  resource_group_name      = var.resource_group_name
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  tags                     = var.tags
+  location = var.location
 
-  blob_properties {
-    versioning_enabled = true
+  # Non-compliance messages
+  non_compliance_message {
+    content = "VM does not have the required prerequisites for Machine Configuration policies."
   }
 }
 
-resource "azurerm_storage_container" "mc_container" {
-  count = var.create_storage_account ? 1 : 0
-
-  name                  = var.storage_container_name
-  storage_account_id    = azurerm_storage_account.mc_storage[0].id
-  container_access_type = "private"
+# Role assignment for the policy to remediate resources
+# The initiative needs Contributor to deploy extensions and managed identities
+resource "azurerm_role_assignment" "mc_prereqs_contributor" {
+  scope                = var.resource_group_id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_resource_group_policy_assignment.mc_prereqs.identity[0].principal_id
 }
 
-# Role assignment for VM to access storage
-resource "azurerm_role_assignment" "storage_blob_reader" {
-  for_each = var.vm_principal_ids
+# Optional: Create remediation task to apply prerequisites to existing VMs
+resource "azurerm_resource_group_policy_remediation" "mc_prereqs" {
+  count = var.create_remediation_task ? 1 : 0
 
-  scope                = var.create_storage_account ? azurerm_storage_account.mc_storage[0].id : var.existing_storage_account_id
-  role_definition_name = "Storage Blob Data Reader"
-  principal_id         = each.value
+  name                 = "${var.assignment_name}-remediation"
+  resource_group_id    = var.resource_group_id
+  policy_assignment_id = azurerm_resource_group_policy_assignment.mc_prereqs.id
 }

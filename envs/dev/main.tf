@@ -1,6 +1,7 @@
 # Development Environment - Main Configuration
 
 # Core Resource Group
+# Creates the "lab boundary" resource group where all resources live
 module "core_rg" {
   source = "../../modules/core_rg"
 
@@ -10,19 +11,24 @@ module "core_rg" {
 }
 
 # Network Infrastructure
+# Creates VNet, subnet, NSG with RDP/SSH rules, and NSG-to-subnet association
 module "network" {
   source = "../../modules/network"
 
-  vnet_name           = var.vnet_name
-  address_space       = var.address_space
-  location            = module.core_rg.resource_group_location
+  vnet_name          = var.vnet_name
+  address_space      = var.address_space
+  location           = module.core_rg.resource_group_location
   resource_group_name = module.core_rg.resource_group_name
-  subnets             = var.subnets
-  nsg_name            = var.nsg_name
-  tags                = var.tags
+  subnets            = var.subnets
+  nsg_name           = var.nsg_name
+  allow_rdp          = var.allow_rdp
+  allow_ssh          = var.allow_ssh
+  allowed_source_ips = var.allowed_source_ips
+  tags               = var.tags
 }
 
 # Windows Virtual Machine
+# Pure compute - does not touch Machine Configuration directly
 module "compute_windows" {
   source = "../../modules/compute_windows"
 
@@ -33,24 +39,30 @@ module "compute_windows" {
   vm_size             = var.vm_size
   admin_username      = var.admin_username
   admin_password      = var.admin_password
+  create_public_ip    = var.create_windows_public_ip
   tags                = var.tags
 }
 
 # Linux Virtual Machine
+# Pure compute - does not touch Machine Configuration directly
 module "compute_linux" {
   source = "../../modules/compute_linux"
 
-  vm_name             = var.linux_vm_name
-  location            = module.core_rg.resource_group_location
-  resource_group_name = module.core_rg.resource_group_name
-  subnet_id           = module.network.subnet_ids["default"]
-  vm_size             = var.vm_size
-  admin_username      = var.admin_username
-  admin_ssh_key       = var.admin_ssh_key
-  tags                = var.tags
+  vm_name                         = var.linux_vm_name
+  location                        = module.core_rg.resource_group_location
+  resource_group_name             = module.core_rg.resource_group_name
+  subnet_id                       = module.network.subnet_ids["default"]
+  vm_size                         = var.vm_size
+  admin_username                  = var.admin_username
+  admin_ssh_key                   = var.admin_ssh_key
+  admin_password                  = var.linux_admin_password
+  disable_password_authentication = var.admin_ssh_key != null
+  create_public_ip                = var.create_linux_public_ip
+  tags                            = var.tags
 }
 
 # Monitoring
+# Log Analytics Workspace and DCR for VM insights
 module "monitoring" {
   source = "../../modules/monitoring"
 
@@ -62,43 +74,44 @@ module "monitoring" {
 }
 
 # Machine Configuration Prerequisites
+# Assigns the built-in MC prerequisites initiative at RG scope
+# This deploys: MC extension/agent, system-assigned managed identity on VMs
 module "mc_prereqs" {
   source = "../../modules/mc_prereqs"
 
-  managed_identity_name  = var.mc_managed_identity_name
-  resource_group_name    = module.core_rg.resource_group_name
-  location               = module.core_rg.resource_group_location
-  create_storage_account = var.create_mc_storage_account
-  storage_account_name   = var.mc_storage_account_name
-  vm_principal_ids = {
-    windows = module.compute_windows.vm_identity_principal_id
-    linux   = module.compute_linux.vm_identity_principal_id
-  }
-  tags = var.tags
+  resource_group_id       = module.core_rg.resource_group_id
+  location                = module.core_rg.resource_group_location
+  assignment_name         = var.mc_prereqs_assignment_name
+  prereqs_initiative_id   = var.mc_prereqs_initiative_id
+  create_remediation_task = var.create_mc_prereqs_remediation
+
+  depends_on = [module.compute_windows, module.compute_linux]
 }
 
 # MDC Security Baseline
+# Assigns MDC/MCSB and OS-specific baseline initiatives at RG scope
+# Lights up "vulnerabilities in security configuration" in Defender for Cloud
 module "mc_mdc_baseline" {
   source = "../../modules/mc_mdc_baseline"
 
   resource_group_id       = module.core_rg.resource_group_id
   location                = module.core_rg.resource_group_location
+  enable_mdc_baseline     = var.enable_mdc_baseline
   enable_windows_baseline = var.enable_windows_baseline
   enable_linux_baseline   = var.enable_linux_baseline
-  policy_effect           = var.mdc_policy_effect
+
+  depends_on = [module.mc_prereqs]
 }
 
 # Custom Machine Configurations
+# Playground for custom Guest Configuration policies
+# Designed for TLS hardening, SSH hardening, MDE-style configs, etc.
 module "mc_custom_configs" {
   source = "../../modules/mc_custom_configs"
 
-  location = module.core_rg.resource_group_location
-  windows_vm_ids = {
-    (var.windows_vm_name) = module.compute_windows.vm_id
-  }
-  linux_vm_ids = {
-    (var.linux_vm_name) = module.compute_linux.vm_id
-  }
-  assignment_type       = var.mc_assignment_type
-  configuration_version = var.mc_configuration_version
+  resource_group_id         = module.core_rg.resource_group_id
+  location                  = module.core_rg.resource_group_location
+  custom_policy_assignments = var.custom_policy_assignments
+
+  depends_on = [module.mc_prereqs]
 }

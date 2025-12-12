@@ -35,6 +35,12 @@ variable "admin_password" {
   sensitive   = true
 }
 
+variable "create_public_ip" {
+  description = "Whether to create a public IP for the VM"
+  type        = bool
+  default     = false
+}
+
 variable "os_disk_type" {
   description = "Type of OS disk"
   type        = string

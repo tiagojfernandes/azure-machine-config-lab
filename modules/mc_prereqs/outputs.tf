@@ -1,29 +1,19 @@
-output "managed_identity_id" {
-  description = "The ID of the user-assigned managed identity"
-  value       = azurerm_user_assigned_identity.mc_identity.id
+output "policy_assignment_id" {
+  description = "The ID of the MC prerequisites policy assignment"
+  value       = azurerm_resource_group_policy_assignment.mc_prereqs.id
 }
 
-output "managed_identity_principal_id" {
-  description = "The principal ID of the user-assigned managed identity"
-  value       = azurerm_user_assigned_identity.mc_identity.principal_id
+output "policy_assignment_name" {
+  description = "The name of the MC prerequisites policy assignment"
+  value       = azurerm_resource_group_policy_assignment.mc_prereqs.name
 }
 
-output "managed_identity_client_id" {
-  description = "The client ID of the user-assigned managed identity"
-  value       = azurerm_user_assigned_identity.mc_identity.client_id
+output "policy_assignment_identity_principal_id" {
+  description = "The principal ID of the policy assignment's managed identity"
+  value       = azurerm_resource_group_policy_assignment.mc_prereqs.identity[0].principal_id
 }
 
-output "storage_account_id" {
-  description = "The ID of the storage account"
-  value       = var.create_storage_account ? azurerm_storage_account.mc_storage[0].id : null
-}
-
-output "storage_account_name" {
-  description = "The name of the storage account"
-  value       = var.create_storage_account ? azurerm_storage_account.mc_storage[0].name : null
-}
-
-output "storage_container_name" {
-  description = "The name of the storage container"
-  value       = var.create_storage_account ? azurerm_storage_container.mc_container[0].name : null
+output "remediation_id" {
+  description = "The ID of the remediation task (if created)"
+  value       = var.create_remediation_task ? azurerm_resource_group_policy_remediation.mc_prereqs[0].id : null
 }

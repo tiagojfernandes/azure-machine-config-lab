@@ -1,84 +1,57 @@
 # Machine Configuration - Custom Configurations Module
+# Your playground for custom Machine Configuration policies.
+#
+# Takes one or more policy definition IDs that represent guest configuration policies
+# and assigns them at RG scope with a configurable effect:
+# - Audit / AuditIfNotExists: Just report compliance
+# - DeployIfNotExists: Apply and monitor (auto-deploy)
+# - You can emulate ApplyAndMonitor / ApplyAndAutoCorrect behavior
+#
+# Designed for plugging in:
+# - TLS hardening config
+# - MDE-style hardening config
+# - SSH hardening for Linux
+# - Windows security hardening
+# - Custom DSC configurations
 
-# Guest Configuration Assignment for Windows
-resource "azurerm_policy_virtual_machine_configuration_assignment" "windows_custom" {
-  for_each = var.windows_vm_ids
+# Dynamic policy assignments for custom Guest Configuration policies
+resource "azurerm_resource_group_policy_assignment" "custom_gc" {
+  for_each = var.custom_policy_assignments
 
-  name               = "${each.key}-custom-config"
-  location           = var.location
-  virtual_machine_id = each.value
+  name                 = each.key
+  resource_group_id    = var.resource_group_id
+  policy_definition_id = each.value.policy_definition_id
+  display_name         = each.value.display_name
+  description          = each.value.description
 
-  configuration {
-    assignment_type = var.assignment_type
-    version         = var.configuration_version
-    name            = var.windows_configuration_name
+  identity {
+    type = "SystemAssigned"
+  }
 
-    dynamic "parameter" {
-      for_each = var.windows_configuration_parameters
-      content {
-        name  = parameter.key
-        value = parameter.value
-      }
-    }
+  location = var.location
+
+  # Dynamic parameters block
+  parameters = each.value.parameters != null ? jsonencode(each.value.parameters) : null
+
+  non_compliance_message {
+    content = each.value.non_compliance_message != null ? each.value.non_compliance_message : "Resource does not comply with ${each.value.display_name}"
   }
 }
 
-# Guest Configuration Assignment for Linux
-resource "azurerm_policy_virtual_machine_configuration_assignment" "linux_custom" {
-  for_each = var.linux_vm_ids
+# Role assignments for policy remediation (needed for DeployIfNotExists)
+resource "azurerm_role_assignment" "custom_gc_contributor" {
+  for_each = { for k, v in var.custom_policy_assignments : k => v if v.needs_remediation }
 
-  name               = "${each.key}-custom-config"
-  location           = var.location
-  virtual_machine_id = each.value
-
-  configuration {
-    assignment_type = var.assignment_type
-    version         = var.configuration_version
-    name            = var.linux_configuration_name
-
-    dynamic "parameter" {
-      for_each = var.linux_configuration_parameters
-      content {
-        name  = parameter.key
-        value = parameter.value
-      }
-    }
-  }
+  scope                = var.resource_group_id
+  role_definition_name = each.value.role_definition_name != null ? each.value.role_definition_name : "Contributor"
+  principal_id         = azurerm_resource_group_policy_assignment.custom_gc[each.key].identity[0].principal_id
 }
 
-# Custom policy definition for guest configuration
-resource "azurerm_policy_definition" "custom_gc_policy" {
-  count = var.create_custom_policy ? 1 : 0
+# Optional remediation tasks for existing non-compliant resources
+resource "azurerm_resource_group_policy_remediation" "custom_gc" {
+  for_each = { for k, v in var.custom_policy_assignments : k => v if v.create_remediation }
 
-  name         = var.custom_policy_name
-  policy_type  = "Custom"
-  mode         = "Indexed"
-  display_name = var.custom_policy_display_name
-  description  = var.custom_policy_description
-
-  metadata = jsonencode({
-    category               = "Guest Configuration"
-    guestConfiguration = {
-      name    = var.guest_configuration_name
-      version = var.configuration_version
-    }
-  })
-
-  policy_rule = jsonencode({
-    if = {
-      allOf = [
-        {
-          field  = "type"
-          equals = "Microsoft.Compute/virtualMachines"
-        }
-      ]
-    }
-    then = {
-      effect = var.policy_effect
-      details = {
-        type = "Microsoft.GuestConfiguration/guestConfigurationAssignments"
-        name = var.guest_configuration_name
-      }
-    }
-  })
+  name                 = "${each.key}-remediation"
+  resource_group_id    = var.resource_group_id
+  policy_assignment_id = azurerm_resource_group_policy_assignment.custom_gc[each.key].id
 }
