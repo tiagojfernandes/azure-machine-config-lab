@@ -54,15 +54,15 @@ variable "windows_assignment_display_name" {
 }
 
 variable "windows_baseline_initiative_id" {
-  description = "The initiative (policy set) definition ID for Windows security baseline"
+  description = "The policy definition ID for Windows security baseline"
   type        = string
-  # Built-in: Windows machines should meet requirements for the Azure compute security baseline
-  default = "/providers/Microsoft.Authorization/policySetDefinitions/72650e9f-97bc-4b2a-ab5f-9781a9fcecbc"
+  # Built-in: Windows machines should meet requirements of the Azure compute security baseline
+  default = "/providers/Microsoft.Authorization/policyDefinitions/72650e9f-97bc-4b2a-ab5f-9781a9fcecbc"
 }
 
 # Linux Baseline
 variable "enable_linux_baseline" {
-  description = "Enable Linux security baseline initiative assignment"
+  description = "Enable Linux security baseline policy assignment"
   type        = bool
   default     = true
 }
@@ -80,8 +80,8 @@ variable "linux_assignment_display_name" {
 }
 
 variable "linux_baseline_initiative_id" {
-  description = "The initiative (policy set) definition ID for Linux security baseline"
+  description = "The policy definition ID for Linux security baseline"
   type        = string
   # Built-in: Linux machines should meet requirements for the Azure compute security baseline
-  default = "/providers/Microsoft.Authorization/policySetDefinitions/fc9b3da7-8347-4380-8e70-0a0361d8dedd"
+  default = "/providers/Microsoft.Authorization/policyDefinitions/fc9b3da7-8347-4380-8e70-0a0361d8dedd"
 }

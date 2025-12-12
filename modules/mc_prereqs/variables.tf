@@ -24,7 +24,7 @@ variable "prereqs_initiative_id" {
   description = "The policy set (initiative) definition ID for MC prerequisites. Default is the built-in 'Deploy prerequisites to enable Guest Configuration policies on virtual machines' initiative."
   type        = string
   # Built-in initiative: Deploy prerequisites to enable Guest Configuration policies on virtual machines
-  default = "/providers/Microsoft.Authorization/policySetDefinitions/12794019-7a00-42cf-95c2-882edd28cc6f"
+  default = "/providers/Microsoft.Authorization/policySetDefinitions/12794019-7a00-42cf-95c2-882eed337cc8"
 }
 
 variable "create_remediation_task" {

@@ -163,7 +163,7 @@ variable "mc_prereqs_assignment_name" {
 variable "mc_prereqs_initiative_id" {
   description = "Policy initiative ID for MC prerequisites (defaults to built-in)"
   type        = string
-  default     = "/providers/Microsoft.Authorization/policySetDefinitions/12794019-7a00-42cf-95c2-882edd28cc6f"
+  default     = "/providers/Microsoft.Authorization/policySetDefinitions/12794019-7a00-42cf-95c2-882eed337cc8"
 }
 
 variable "create_mc_prereqs_remediation" {
